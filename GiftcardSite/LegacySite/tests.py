@@ -18,7 +18,7 @@ class AttackTestCases(TestCase):
         User.objects.create(id=7, last_login="2020-10-01 12:51:48.124599", username="Chris",
                             password="000000000000000000000000000078d2$a8dfe9d76be66382be9a0e809d087342e2aa8cc7060721784d7163ae49141143")
         # create a malicious card
-        card_file_path = f"/Users/christopherdonnelly/Documents/NYU Tandon MSCS/Application Security/Assignments/Assignment2/AppSecAssignment2.1/newcard.gftcrd"
+        card_file_path = "../newcard.gftcrd"
         prod = Product.objects.get(product_id=1)
         amount = 100
         user_account = User.objects.get(username="admin")
@@ -53,7 +53,7 @@ class AttackTestCases(TestCase):
     def test_sql_injection(self):
         url = reverse("Use a card")
         self.client.login(username="Chris", password="test")
-        with open('/Users/christopherdonnelly/Documents/NYU Tandon MSCS/Application Security/Assignments/Assignment2/AppSecAssignment2.1/newcard.gftcrd') as fp:
+        with open("../newcard.gftcrd") as fp:
             response = self.client.post(url, {'card_data': fp, 'card_fname': "card_1", "card_supplied":True})
             self.assertTrue(response.status_code, 200)
             self.assertTemplateUsed(response, 'use-card.html')

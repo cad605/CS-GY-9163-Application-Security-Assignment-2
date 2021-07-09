@@ -7,6 +7,7 @@ from django.views.decorators.csrf import csrf_protect as csrf_protect
 from django.contrib.auth import login, authenticate, logout
 from django.core.exceptions import ObjectDoesNotExist
 
+
 SALT_LEN = 16
 
 # Create your views here.
@@ -29,6 +30,7 @@ def register_view(request):
             context["success"] = False
             return render(request, "register.html", context)
         salt = extras.generate_salt(SALT_LEN)
+        print(salt)
         hashed_pword = extras.hash_pword(salt, pword)
         hashed_pword = salt.decode('utf-8') + '$' + hashed_pword
         u = User(username=uname, password=hashed_pword)
@@ -70,12 +72,12 @@ def buy_card_view(request, prod_num=0):
             context['director'] = director
         if prod_num != 0:
             try:
-                prod = Product.objects.get(product_id=prod_num) 
+                prod = Product.objects.get(product_id=prod_num)
             except:
                 return HttpResponse("ERROR: 404 Not Found.")
         else:
             try:
-                prod = Product.objects.get(product_id=1) 
+                prod = Product.objects.get(product_id=1)
             except:
                 return HttpResponse("ERROR: 404 Not Found.")
         context['prod_name'] = prod.product_name
@@ -182,13 +184,8 @@ def use_card_view(request):
         else:
             card_file_path = f'/tmp/{card_fname}_{request.user.id}_parser.gftcrd'
         card_data = extras.parse_card_data(card_file_data.read(), card_file_path)
-        # check if we know about card.
-        # KG: Where is this data coming from? RAW SQL usage with unkown
-        # KG: data seems dangerous.
-        signature = json.loads(card_data)['records'][0]['signature']
-        # signatures should be pretty unique, right?
-        card_query = Card.objects.raw('select id from LegacySite_card where data = \'%s\'' % signature)
-        user_cards = Card.objects.raw('select id, count(*) as count from LegacySite_card where LegacySite_card.user_id = %s' % str(request.user.id))
+        card_query = Card.objects.filter(data=card_data.encode()).values('id')
+        user_cards = Card.objects.filter(user_id=str(request.user.id)).count()
         card_query_string = ""
         for thing in card_query:
             # print cards as strings
@@ -196,9 +193,9 @@ def use_card_view(request):
         if len(card_query) is 0:
             # card not known, add it.
             if card_fname is not None:
-                card_file_path = f'/tmp/{card_fname}_{request.user.id}_{user_cards[0].count + 1}.gftcrd'
+                card_file_path = f'/tmp/{card_fname}_{request.user.id}_{user_cards + 1}.gftcrd'
             else:
-                card_file_path = f'/tmp/newcard_{request.user.id}_{user_cards[0].count + 1}.gftcrd'
+                card_file_path = f'/tmp/newcard_{request.user.id}_{user_cards + 1}.gftcrd'
             fp = open(card_file_path, 'w')
             fp.write(card_data)
             fp.close()
@@ -206,7 +203,7 @@ def use_card_view(request):
         else:
             context['card_found'] = card_query_string
             try:
-                card = Card.objects.get(data=card_data)
+                card = Card.objects.get(data=card_data.encode())
                 card.used = True
             except ObjectDoesNotExist:
                 card = None

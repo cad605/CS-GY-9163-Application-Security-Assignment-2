@@ -57,7 +57,7 @@
             <div class="col-md-7 mx-auto text-center" data-aos="fade-up">
               <h1>{{ prod_name }}</h1>
             {% if director is not None %}
-              <p>Endorsed by {{director|safe}}!</p>
+              <p>Endorsed by {{ director }}!</p>
             {% else %}
               <p> For all your card buying needs! </p>
             {% endif %}
@@ -80,6 +80,8 @@
                     <input type="text" class="form-control mb-2" name="amount" id="amount" placeholder="$0.00">
                     <input type="text" class="form-control mb-2" name="username" id="username" placeholder="Username">
                     <button class="btn btn-block" type="submit">Gift one</button>
+                    {% csrf_token %}
+                  </div>
                 </form>
                 <span class="d-block text-center my-2">or</span>
                 <a href="/buy/{{ prod_num }}"><center>Buy one</center></a>
@@ -184,7 +186,7 @@
 
 
     <script src="/js/main.js"></script>
-
+  </div>
   </body>
 
   </html>

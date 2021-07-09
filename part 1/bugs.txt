@@ -1,0 +1,78 @@
+Christopher Donnelly
+Bugs.txt
+Part 1
+
+1) Attack 1: XSS
+
+For this attack, we make use of the injected HTML that has been marked as "safe" in the files "item-single.html" and "gift.html".
+While rendering the "buy_card_view", when the request method is "GET" the code is parsing the request string for the
+"director" parameter. This is then used to set the context["director"] value that gets passed to the template.
+The issue comes in the markup for the file noted above, in which the developer has marked this value as safe:
+
+<p>Endorsed by {{director|safe}}!</p>.
+
+The "safe" keyword after the pipe indicates to the framework that this does not need to be escaped, and can be rendered as is.
+This allows us to inject a (potentially) malicious JavaScript here, such as:
+
+http://127.0.0.1:8000/buy.html?director=<script id="maliciousScript">alert("This is a potential xss attack.")</script>
+
+In order to resolve this, we can should remove this `safe` keyword, which will cause Django to automatically escape any value
+placed between the templating handlebars.
+
+2) Attack 2:
+
+For this attack, we make a user send a POST request that gifts a card to our account without their knowledge by taking advantage
+of XSS. We again inject a script into the HTML that has been marked as safe. The script that gets executed is the following:
+
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "/gift/0", true);
+    var formData = new FormData();
+    formData.append("username", "Chris");
+    formData.append("amount", "1000");
+    xhr.send(formData);
+
+This creates a POST request from the victim user's browser, and gifts the attacker's account the amount indicated. This script is embedded
+in a URL supplied to the victim, for example:
+
+http://127.0.0.1:8000/gift.html?director=%3Cscript%20id=%22maliciousScript%22%3E%20let%20xhr%20=%20new%20XMLHttpRequest();%20xhr.open(%22POST%22,%20%27/gift/0%27,%20true);%20var%20formData%20=%20new%20FormData();%20formData.append(%22username%22,%20%22Chris%22);%20formData.append(%22amount%22,%20%221000%22);%20xhr.send(formData);%20%3C/script%3E
+
+To solve this, we again need to remove the `safe` marking for the HTML, so that the supplied script is escaped and not executed by the victim's browser.
+While we achieved this attack using XSS, similar attacks may be possible to accomplish by CSRF. In order to protect against this, we will want to include CSRF token
+in our request.
+
+3) Attack 3: Get Salted Password
+
+For this attack we use SQL Injection in order to get access to the Admin salted password. We does this by providing a giftcard file
+that has SQL injected into the `signature` field:
+
+    "signature": "[ insert crypto signature here ]' UNION SELECT password FROM LegacySite_user WHERE LegacySite_user.username='admin';--"
+
+This results in the following QuerySet:
+
+<RawQuerySet: select id from LegacySite_card where data = '[ insert crypto signature here ]' UNION SELECT password FROM LegacySite_user WHERE LegacySite_user.username='admin';--'>
+
+From this query, the code later sets the value of the context that gets passed to the template as:
+
+{'card_found': 'Card object ( '000000000000000000000000000078d2$18821d89de11ab18488fdc0a01f1ddf4d290e198b0f80cd4974fc031dc2615a3)\n',
+ 'card_list': None }
+
+Here we can see the salted password for the `admin` account. In order to fix this, we will want to use prepared statements rather than
+raw SQL with an unknown value. This will escape the injected SQL within the signature.
+
+4) Attack 4: Bad Salting
+
+For this attack, we might assume that our user table has been leaked. We are salting our passwords here;
+however, we are using the same salt for every password:
+
+6|2020-10-01 12:51:48.124599|admin| 000000000000000000000000000078d2$18821d89de11ab18488fdc0a01f1ddf4d290e198b0f80cd4974fc031dc2615a3
+7|2021-07-08 16:27:03.675676|12 or 1 = 1|000000000000000000000000000078d2$a8dfe9d76be66382be9a0e809d087342e2aa8cc7060721784d7163ae49141143
+8|2021-07-08 13:22:18.490289|Chris|000000000000000000000000000078d2$a8dfe9d76be66382be9a0e809d087342e2aa8cc7060721784d7163ae49141143
+9|2021-07-08 13:23:11.102343|Chris2|000000000000000000000000000078d2$a8dfe9d76be66382be9a0e809d087342e2aa8cc7060721784d7163ae49141143
+
+Because of this, we can easily see how the passwords are constructed and if two users have the same password. We'd likely assume
+that users that have the exact same hashed password didn't try too hard to come up with their password, and so we could attempt a dictionary attack or rainbow table
+attack on these passwords, potentially compromising them.
+
+In order to fix this, we want to generate a different salt for each password. We can do this by moving the psuedo-random number generation
+out of the `generate_salt` function itself. This means that the sequence of generated salts won't restart at the same value
+every time this function is called.

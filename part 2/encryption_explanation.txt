@@ -19,11 +19,10 @@ This package uses a setting called CRYPTOGRAPHY_KEY, which can be defined by the
 or is None is provided, this key will be derived from the unique SECRET_KEY that django-admin startproject automatically
 adds to each new project. Django uses this value to provide cryptographic signing, and should be set to a unique,
 unpredictable value. Still, we'd prefer to not store our secrets on the same server and within the same file system
-as database. Thus, in our settings.py file, we take our generated key ('kmgysa#fz+9(z1*=c0ydrjizk*7sthm2ga1z4=^61$cxcq8b$l')
-and set it as an environment variables:
+as database. Thus, in our settings.py file, we take our generated key and set it as an environment variables:
 
     SECRET_KEY=os.getenv('SECRET_KEY')
 
-When running locally we can run export SECRET_KEY='kmgysa#fz+9(z1*=c0ydrjizk*7sthm2ga1z4=^61$cxcq8b$l'. Then wherever we deploy
+When running locally we can run export SECRET_KEY='[OUR SECRET KEY]'. Then wherever we deploy
 our application, we can set the environment variable for that server. Likewise, when running our build in Travis we can set the
 environment variable for the build and reference it in the same way in our setting.py file as above.

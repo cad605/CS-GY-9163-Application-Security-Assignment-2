@@ -15,14 +15,14 @@ We focus on the Card model, as the `data` field in this table is used to find ex
 `use_card_view`. Thus, by encrypting this data, attackers will not be able to reproduce and use the cards stored
 in the compromised database.
 
-This package uses a setting called CRYPTOGRAPHY_KEY, which can be defined by the user in Django's settings.py file
-or is None is provided, this key will be derived from the unique SECRET_KEY that django-admin startproject automatically
-adds to each new project. Django uses this value to provide cryptographic signing, and should be set to a unique,
+This package uses a setting called CRYPTOGRAPHY_KEY, which can be defined by the admin in Django's settings.py file
+or if None is provided, this key will be derived from the unique SECRET_KEY that django-admin startproject automatically
+adds to each new project. Django also uses this value to provide cryptographic signing, and should be set to a unique,
 unpredictable value. Still, we'd prefer to not store our secrets on the same server and within the same file system
-as database. Thus, in our settings.py file, we take our generated key and set it as an environment variables:
+as our (potentially compromised) database. Thus, in our settings.py file, we take our generated key and set it as an environment variables:
 
     SECRET_KEY=os.getenv('SECRET_KEY')
 
-When running locally we can run export SECRET_KEY='[OUR SECRET KEY]'. Then wherever we deploy
+When running locally we can run `export SECRET_KEY='[OUR SECRET KEY]'`. Then wherever we deploy or build
 our application, we can set the environment variable for that server. Likewise, when running our build in Travis we can set the
 environment variable for the build and reference it in the same way in our setting.py file as above.

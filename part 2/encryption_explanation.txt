@@ -1,0 +1,29 @@
+Christopher Donnelly
+Encryption_Explanation.txt
+Part 2
+
+For this part, I used the python package django-cryptography, the docs for which can be found here:
+
+    https://django-cryptography.readthedocs.io/en/latest/index.html
+
+This package is a wrapper around the Cryptography library, and provides an easy interface
+using symmetrical encryption to store sensitive data in the database. Using the encrypt method
+from django_cryptography.fields, we can define our encrypted fields and provide bi-directional data retrieval.
+
+In this case, our goal is to encrypt important fields in our database tables that can be used to steal gift cards.
+We focus on the Card model, as the `data` field in this table is used to find existing cards in our database in
+`use_card_view`. Thus, by encrypting this data, attackers will not be able to reproduce and use the cards stored
+in the compromised database.
+
+This package uses a setting called CRYPTOGRAPHY_KEY, which can be defined by the user in Django's settings.py file
+or is None is provided, this key will be derived from the unique SECRET_KEY that django-admin startproject automatically
+adds to each new project. Django uses this value to provide cryptographic signing, and should be set to a unique,
+unpredictable value. Still, we'd prefer to not store our secrets on the same server and within the same file system
+as database. Thus, in our settings.py file, we take our generated key ('kmgysa#fz+9(z1*=c0ydrjizk*7sthm2ga1z4=^61$cxcq8b$l')
+and set it as an environment variables:
+
+    SECRET_KEY=os.getenv('SECRET_KEY')
+
+When running locally we can run export SECRET_KEY='kmgysa#fz+9(z1*=c0ydrjizk*7sthm2ga1z4=^61$cxcq8b$l'. Then wherever we deploy
+our application, we can set the environment variable for that server. In our case, in Travis, we can set the environment variable
+for the build and reference it in the same way in our setting.py file as above.

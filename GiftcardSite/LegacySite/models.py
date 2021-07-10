@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser
 from django.contrib.auth.backends import BaseBackend
 from django_cryptography.fields import encrypt
+from django_cryptography.fields import PickledField
 from . import extras
 
 # Create your models here.
@@ -38,7 +39,7 @@ class Product(models.Model):
 
 class Card(models.Model):
     id = models.AutoField(primary_key=True)
-    data = encrypt(models.BinaryField(unique=True))
+    data = PickledField(models.BinaryField(unique=True))
     product = models.ForeignKey('LegacySite.Product', on_delete=models.CASCADE, default=None)
     amount = models.IntegerField()
     fp = encrypt(models.CharField(max_length=100, unique=True))

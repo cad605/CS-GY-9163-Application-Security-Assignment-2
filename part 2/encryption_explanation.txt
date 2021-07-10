@@ -25,5 +25,5 @@ and set it as an environment variables:
     SECRET_KEY=os.getenv('SECRET_KEY')
 
 When running locally we can run export SECRET_KEY='kmgysa#fz+9(z1*=c0ydrjizk*7sthm2ga1z4=^61$cxcq8b$l'. Then wherever we deploy
-our application, we can set the environment variable for that server. In our case, in Travis, we can set the environment variable
-for the build and reference it in the same way in our setting.py file as above.
+our application, we can set the environment variable for that server. Likewise, when running our build in Travis we can set the
+environment variable for the build and reference it in the same way in our setting.py file as above.
